@@ -67,6 +67,37 @@
 
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    
+    <script>
+        (function() {
+            let healthPingInterval = null;
+            
+            function pingHealth() {
+                fetch('/api/health', { 
+                    method: 'GET',
+                    cache: 'no-cache',
+                    keepalive: true 
+                })
+                .catch(error => {
+                    console.warn('Health check failed:', error);
+                    // Optional: Show offline warning
+                });
+            }
+            
+            // Start pinging when page loads
+            window.addEventListener('load', () => {
+                pingHealth(); // Initial ping
+                healthPingInterval = setInterval(pingHealth, 15000); // Every 30 seconds
+            });
+            
+            // Stop pinging when page unloads
+            window.addEventListener('beforeunload', () => {
+                if (healthPingInterval) {
+                    clearInterval(healthPingInterval);
+                }
+            });
+        })();
+    </script>
 </body>
 
 </html>
