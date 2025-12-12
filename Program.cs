@@ -51,10 +51,14 @@ builder.Services.AddDbContext<ExamDbContext>(
     options => options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
 builder.Services.AddDbContext<QuestionBankDbContext>(
     options => options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
+builder.Services.AddDbContext<WhitelistDbContext>(
+    options => options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
 
 builder.Services.AddScoped<IExamRepository, ExamRepository>();
 builder.Services.AddScoped<IQuestionBankRepository, QuestionBankRepository>();
+builder.Services.AddScoped<IWhitelistRepository, WhitelistRepository>();
 builder.Services.AddScoped<ExamService>();
+builder.Services.AddScoped<WhitelistService>();
 
 var app = builder.Build();
 
