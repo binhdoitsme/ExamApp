@@ -1,0 +1,225 @@
+@page "/Exams/DoExam/{examId:guid}"
+@using ExamApp.Domain
+@model DoExamModel
+@{
+    ViewData["Title"] = "Take Exam";
+    Layout = "_Layout";
+}
+
+<div class="container">
+    <div class="columns is-vcentered is-centered">
+        <div class="column is-10">
+            <div class="card">
+                <div class="card-content">
+                    <!-- Header with Timer & Auto-save Status -->
+                    <div class="level">
+                        <div class="level-left">
+                            <div class="level-item">
+                                <h1 class="title is-3">@Model.Exam?.Duration</h1>
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <div class="level-item">
+                                <!-- Timer -->
+                                <div class="notification is-warning is-light mr-3">
+                                    <strong id="countdown" class="has-text-weight-bold is-size-6">
+                                        @(Model.TimeRemaining?.ToString(@"hh\:mm\:ss") ?? "00:00:00")
+                                    </strong>
+                                    <span id="expired-text" class="ml-2 has-text-danger" style="display: none;">
+                                        ⏰ Time Expired
+                                    </span>
+                                </div>
+                                <!-- Auto-save Status -->
+                                <div class="notification is-info is-light" id="autosave-status" style="display: none;">
+                                    <span id="autosave-text">Saved</span>
+                                    <i class="fas fa-check-circle ml-2" style="color: #48c78e;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.IsExpired)
+                    {
+                        <div class="notification is-danger">
+                            <strong>Time Expired!</strong> Please submit your answers.
+                        </div>
+                    }
+
+                    <!-- Questions -->
+                    @if (Model.Exam?.Questions != null)
+                    {
+                        <form id="exam-form" method="post">
+                            @Html.AntiForgeryToken()
+                            @for (int i = 0; i < Model.Exam.Questions.Count; i++)
+                            {
+                                var question = Model.Exam.Questions[i];
+                                <div class="box mb-4">
+                                    <div class="content">
+                                        <h3 class="title is-5 mb-3">
+                                            Q@(i + 1). @question.Text
+                                        </h3>
+
+                                        @if (!string.IsNullOrEmpty(question.AttachmentImg))
+                                        {
+                                            <figure class="image is-4by3 mb-4">
+                                                <img src="@question.AttachmentImg" alt="Question image" />
+                                            </figure>
+                                        }
+
+                                        <!-- A/B/C/D using AnswerOrder -->
+                                        <div class="mt-4">
+                                            @for (int j = 0; j < Math.Min(4, question.AnswerOrder.Count); j++)
+                                            {
+                                                var answerId = question.AnswerOrder[j];
+                                                var answerText = question.Answers.ContainsKey(answerId) ? question.Answers[answerId]
+                                                : "N/A";
+                                                var labelChar = (char)('A' + j);
+
+                                                <div class="field mb-2">
+                                                    <div class="control">
+                                                        <label class="radio">
+                                                            <input type="radio" name="answers[@i]" value="@answerId"
+                                                                data-question-index="@i"
+                                                                checked="@(answerId == question.UserSelection)" />
+                                                            <span class="ml-2">
+                                                                <strong>@labelChar.</strong> @answerText
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Submit Button -->
+                            <div class="field is-grouped is-grouped-right mt-6">
+                                <div class="control">
+                                    <button id="submit-btn" type="submit" formmethod="post"
+                                        class="button is-success is-large" form="exam-form">
+                                        <span>Submit Exam</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    @{
+        var endTime = (DateTimeOffset?)Model.Exam?.StartedAt?.Add(Duration.Parse(Model.Exam.Duration).Value);
+        var examId = Model.Exam?.Id.ToString() ?? "";
+    }
+    <script>
+        let endTime = @((endTime?.ToUnixTimeMilliseconds() ?? 0).ToString());
+        let expired = @Model.IsExpired.ToString().ToLowerInvariant();
+        const examId = '@examId';
+        let autoSaveInterval = null;
+
+        // Auto-save every 3 minutes (180000 ms)
+        function startAutoSave() {
+            autoSaveInterval = setInterval(autoSaveAnswers, 60000); // 3 minutes
+        }
+
+        // Collect answers and POST to API
+        async function autoSaveAnswers() {
+            const answers = [];
+            const radios = document.querySelectorAll('input[type="radio"]:checked');
+
+            radios.forEach(radio => {
+                const questionIndex = parseInt(radio.dataset.questionIndex);
+                const answerValue = parseInt(radio.value);
+                answers[questionIndex] = answerValue;
+            });
+
+            // Show saving status
+            const statusEl = document.getElementById('autosave-status');
+            const textEl = document.getElementById('autosave-text');
+            statusEl.style.display = 'inline-flex';
+            textEl.textContent = 'Saving...';
+
+            try {
+                const response = await fetch(`/api/Exam/${examId}/answers`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify(answers)
+                });
+
+                if (response.ok) {
+                    textEl.textContent = 'Saved';
+                    // Auto-hide success after 2s
+                    setTimeout(() => {
+                        statusEl.style.display = 'none';
+                    }, 2000);
+                } else {
+                    textEl.textContent = 'Save failed';
+                    statusEl.className = 'notification is-danger is-light';
+                    setTimeout(() => {
+                        statusEl.style.display = 'none';
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('Auto-save failed:', error);
+                textEl.textContent = 'Save failed';
+                statusEl.className = 'notification is-danger is-light';
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Timer functionality (unchanged)
+        if (!expired) {
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+            startAutoSave();  // Start auto-save interval
+        }
+
+        function updateCountdown() {
+            const now = Date.now();
+            const remaining = endTime - now;
+
+            if (remaining <= 0) {
+                const countdown = document.getElementById('countdown');
+                const expiredText = document.getElementById('expired-text');
+                const submitBtn = document.getElementById('submit-btn');
+                if (countdown !== null && expiredText !== null && submitBtn !== null) {
+                    countdown.textContent = '00:00:00';
+                    expiredText.style.display = 'inline';
+                    submitBtn.disabled = false;
+                }
+
+                // Stop auto-save when expired
+                if (autoSaveInterval) {
+                    clearInterval(autoSaveInterval);
+                }
+                return;
+            }
+
+            const hours = Math.floor(remaining / (1000 * 60 * 60));
+            const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+            const countdown = document.getElementById('countdown');
+            if (countdown !== null) {
+                document.getElementById('countdown').textContent =
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (autoSaveInterval) {
+                clearInterval(autoSaveInterval);
+            }
+        });
+    </script>
+}

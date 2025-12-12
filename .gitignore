@@ -1,0 +1,6 @@
+bin/
+obj/
+.vscode/
+appsettings.*.json
+docker_build.sh
+.dockerenv

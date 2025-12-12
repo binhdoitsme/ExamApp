@@ -1,0 +1,138 @@
+@page
+@using ExamApp.Domain
+@using ExamApp.DTO
+@model ExamApp.Pages.Exams.ListModel
+@{
+    ViewData["Title"] = "Exam History";
+    Layout = "_Layout";
+}
+
+<div class="container">
+    <section class="section">
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <h1 class="title is-3">Exam History</h1>
+                </div>
+            </div>
+            <div class="level-right">
+                <a asp-page="/Exams/NewExam" class="button is-primary">
+                    <span class="icon"><i class="fas fa-plus"></i></span>
+                    <span>New Exam</span>
+                </a>
+            </div>
+        </div>
+
+        @if (!Model.Exams.Exams.Any())
+        {
+            <div class="box has-background-light has-text-centered py-6">
+                <i class="fas fa-inbox fa-5x has-text-grey-lighter mb-4"></i>
+                <h2 class="title is-4 has-text-grey">No exams yet</h2>
+                <p class="subtitle is-6 has-text-grey">
+                    Start your first exam to see your progress here.
+                </p>
+                <a asp-page="/Exams/NewExam" class="button is-primary mt-4">Take Exam</a>
+            </div>
+        }
+        else
+        {
+            <!-- Exams Table -->
+            <div class="table-container">
+                <table class="table is-fullwidth is-striped is-hoverable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                            <th>Questions</th>
+                            <th>Score</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var exam in Model.Exams.Exams.OrderByDescending(e => e.CreatedAt))
+                        {
+                            <tr>
+                                <td>
+                                    <div>
+                                        <strong>@exam.CreatedAt.ToString("MMM dd, yyyy")</strong>
+                                        <br />
+                                        <small class="has-text-grey">@exam.CreatedAt.ToString("hh:mm tt")</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    @{
+                                        var status = exam.SubmittedAt.HasValue ? "Completed" 
+                                            : (exam.StartedAt.HasValue ? "In Progress" : "Not Started");
+                                        var statusClass = exam.SubmittedAt.HasValue ? "is-success" 
+                                            : (exam.StartedAt.HasValue ? "is-warning" : "is-light");
+                                    }
+                                    <span class="tag @statusClass">@status</span>
+                                </td>
+                                <td>
+                                    <span class="tag is-info is-light">@exam.Duration</span>
+                                </td>
+                                <td>@exam.QuestionCount</td>
+                                <td>
+                                    @if (exam.CorrectCount.HasValue)
+                                    {
+                                        var percentage = Math.Round((double)exam.CorrectCount / exam.QuestionCount * 100, 1);
+                                        var scoreClass = percentage >= 85 ? "is-success" : "is-danger";
+                                        <span class="tag @scoreClass">
+                                            @exam.CorrectCount/@exam.QuestionCount (@percentage%)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="tag">Not submitted</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="buttons">
+                                        @if (!exam.StartedAt.HasValue)
+                                        {
+                                            <a asp-page="/Exams/DoExam" asp-route-examId="@exam.Id" 
+                                               class="button is-small is-info">
+                                                <i class="fas fa-play mr-1"></i>Start
+                                            </a>
+                                        }
+                                        else if (!exam.SubmittedAt.HasValue)
+                                        {
+                                            <a asp-page="/Exams/DoExam" asp-route-examId="@exam.Id" 
+                                               class="button is-small is-warning">
+                                                <i class="fas fa-edit mr-1"></i>Continue
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-page="/Exams/Results" asp-route-examId="@exam.Id" 
+                                               class="button is-small is-success">
+                                                <i class="fas fa-chart-bar mr-1"></i>View Results
+                                            </a>
+                                        }
+                                        <a asp-page="/Exams/Results" asp-route-examId="@exam.Id" 
+                                           class="button is-small is-light" title="Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination (if needed) -->
+            @if (Model.Exams.Exams.Count >= 20)
+            {
+                <nav class="pagination is-centered mt-6" role="navigation">
+                    <a class="pagination-previous">Previous</a>
+                    <a class="pagination-next">Next</a>
+                    <ul class="pagination-list">
+                        <li><a class="pagination-link is-current">1</a></li>
+                    </ul>
+                </nav>
+            }
+        }
+    </section>
+</div>

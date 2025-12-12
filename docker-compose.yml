@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: examapp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: examdb # Database=examdb
+      POSTGRES_USER: postgres # Username=postgres
+      POSTGRES_PASSWORD: yourpassword # Password=yourpassword
+    ports:
+      - "5433:5432" # Port=5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d examdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - examapp-network
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: examapp-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .dockerenv
+    ports:
+      - "5173:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/health || exit 1"]
+      interval: 30s
+      timeout: 30s
+      start_period: 5s
+      retries: 3
+    networks:
+      - examapp-network
+networks:
+  examapp-network: {}
+volumes:
+  postgres_data:
+    driver: local
+

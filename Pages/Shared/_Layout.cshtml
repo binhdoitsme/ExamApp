@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ExamApp</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/ExamApp.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+</head>
+
+<body>
+    <nav class="navbar has-shadow" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" asp-area="" asp-page="/Index">
+                <strong>ExamApp</strong>
+            </a>
+        </div>
+
+        <div id="navbarBasic" class="navbar-menu">
+            <div class="navbar-start">
+                <a class="navbar-item" asp-area="" asp-page="/Index">
+                    Home
+                </a>
+                <a class="navbar-item" asp-area="" asp-page="/Exams/ViewExams">
+                    My Exams
+                </a>
+            </div>
+            <div class="navbar-end pr-2">
+                @{
+                    if (User?.Identity?.IsAuthenticated ?? false)
+                    {
+                        <div class="column is-8 is-flex is-align-items-center">
+                            <span class="has-text-centered is-size-7">Hello, @User.Identity.Name!</span>
+                        </div>
+                        <div class="column is-4 is-flex is-align-items-center">
+                            <a class="button" href="/api/auth/logout">Log out</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="is-flex is-align-items-center">
+                            <a class="button" href="/api/auth/google">Log in with Google</a>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </nav>
+
+    <section class="section">
+        <div class="container">
+            <main role="main">
+                @RenderBody()
+            </main>
+        </div>
+    </section>
+
+    <footer class="footer has-background p-0">
+        <div class="content has-text-centered">
+            &copy; 2025 - ExamApp - <a asp-area="" asp-page="/Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+
+</html>

@@ -1,0 +1,138 @@
+@page "/Exams/Results/{examId:guid}"
+@model ResultsModel
+@{
+    ViewData["Title"] = "Exam Results";
+}
+
+<div class="container">
+    <section class="section">
+        <div class="has-text-centered">
+            <h1 class="title is-2 mb-6">@Model.ResultStatus</h1>
+
+            <!-- Score Badge -->
+            <div class="notification @(Model.ResultStatus == "PASSED" ? "is-success" : "is-danger") mb-6">
+                <div class="content has-text-centered">
+                    <p class="heading">@Model.CorrectCount / @Model.TotalQuestions correct</p>
+                    <p class="title is-1">@(Model.ScorePercentage)%</p>
+                </div>
+                <p class="subtitle">@Model.ResultMessage</p>
+            </div>
+        </div>
+
+        <!-- Question Results -->
+        <div class="columns">
+            <div class="column is-12">
+                @foreach (var question in Model.Exam!.Questions)
+                {
+                    <div class="box mb-5">
+                        <div class="content">
+                            <div class="level">
+                                <div class="level-left">
+                                    <div class="level-item">
+                                        <h3 class="title is-5">
+                                            Q@(question.Index + 1)
+                                            <span
+                                                class="tag ml-2 @(question.IsCorrect ? "is-success" : "is-danger") is-medium">
+                                                @(question.IsCorrect ? "✓ Correct" : "✗ Incorrect")
+                                            </span>
+                                        </h3>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    @{
+                                        var selectedLabel = question.AnswerOrder.Count > 0
+                                                                ? question.AnswerOrder.IndexOf(question.UserSelection ?? 0)
+                                        : -1;
+                                    }
+                                    <span class="tag is-info">
+                                        Answer: <strong class="ml-1">@(selectedLabel >= 0 ? $"{(char)('A' + selectedLabel)}"
+                                                                                    : "Not answered")</strong>
+                                    </span>
+                                    @if (question.CorrectAnswer.HasValue)
+                                    {
+                                        var correctLabel = question.AnswerOrder.IndexOf(question.CorrectAnswer.Value);
+                                        <span class="tag is-warning ml-2">
+                                            Correct: <strong>@((char)('A' + correctLabel))</strong>
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Question Text -->
+                            <p class="is-size-6 mb-4">@question.Text</p>
+
+                            @if (!string.IsNullOrEmpty(question.AttachmentImg))
+                            {
+                                <figure class="image is-16by9 mb-4">
+                                    <img src="@question.AttachmentImg" alt="Question image" />
+                                </figure>
+                            }
+
+                            <div class="field is-grouped-multiline">
+                                @for (int j = 0; j < Math.Min(4, question.AnswerOrder.Count); j++)
+                                {
+                                    var answerId = question.AnswerOrder[j];
+                                    var answerText = question.Answers.ContainsKey(answerId) ? question.Answers[answerId] :
+                                    "N/A";
+                                    var labelChar = (char)('A' + j);
+
+                                    var isSelected = question.UserSelection == answerId;
+                                    var isCorrect = question.CorrectAnswer == answerId;
+                                    var answerClass = isSelected switch
+                                    {
+                                        true when isCorrect => "has-background-success",
+                                        true => "has-background-danger",
+                                        false when isCorrect => "has-background-info",
+                                        _ => "has-background"
+                                            };
+
+                                    <div class="control">
+                                        <label class="radio is-size-6 @answerClass p-3 mb-2 container">
+                                            <input type="radio" name="q@(question.Index)" value="@answerId" disabled checked="@isSelected"/>
+                                            <span class="ml-3">
+                                                <strong>@labelChar.</strong> @answerText
+                                            </span>
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Explanations -->
+                            @if (question.Explanations != null && question.Explanations.Any())
+                            {
+                                <div class="notification has-background mt-4">
+                                    <strong>📖 Explanation:</strong>
+                                    <ul class="mt-2">
+                                        @foreach (var explanation in question.Explanations.OrderBy(kvp =>
+                                                                        question.AnswerOrder.IndexOf(kvp.Key)))
+                                        {
+                                            var explanationLabelIndex = question.AnswerOrder.IndexOf(explanation.Key);
+                                            var explanationLabel = explanationLabelIndex >= 0 ? (char)('A' + explanationLabelIndex)
+                                            : '?';
+                                            <li
+                                                class="@(explanation.Key == question.CorrectAnswer ? "has-text-success" : "has-text-danger")">
+                                                <strong>@explanationLabel:</strong> @explanation.Value
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="has-text-centered mt-8">
+            <a asp-page="/Exams/List" class="button is-medium is-info mr-3">
+                <span class="icon"><i class="fas fa-list"></i></span>
+                <span>Exam History</span>
+            </a>
+            <a asp-page="/Exams/New" class="button is-primary is-medium">
+                <span class="icon"><i class="fas fa-plus"></i></span>
+                <span>Take New Exam</span>
+            </a>
+        </div>
+    </section>
+</div>

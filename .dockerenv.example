@@ -1,0 +1,18 @@
+APP_SETTINGS_JSON='{
+  "DetailedErrors": true,
+  "ConnectionStrings": {
+    "ExamDbConnection": "Host=postgres;Port=5432;Database=examdb;Username=postgres;Password=yourpassword;Pooling=true"
+  },
+  "Authentication": {
+    "Google": {
+      "ClientId": "client-id.apps.googleusercontent.com",
+      "ClientSecret": "client-secret"
+    }
+  },
+  "Logging": {
+      "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  }
+}'

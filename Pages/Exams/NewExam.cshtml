@@ -1,0 +1,45 @@
+@page
+@model NewExamModel
+
+<h1 class="title is-3">Ready?</h1>
+<div>
+    <button id="start-exam-btn" class="button">
+        <span>Start Exam</span>
+    </button>
+</div>
+
+@section Scripts
+{
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const btn = document.getElementById('start-exam-btn');
+            const examId = '@Model.Exam?.Id';
+
+            btn.addEventListener('click', async function (event) {
+                event.preventDefault();
+                btn.classList.add('is-loading');
+                btn.disabled = true;
+
+                try {
+                    const response = await fetch(`/api/Exam/${examId}/start`, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    window.location.href = `/Exams/DoExam/${examId}`;
+                } catch (error) {
+                    console.error('Start exam failed:', error);
+                    alert('Failed to start exam. Please try again.');
+                    btn.classList.remove('is-loading');
+                    btn.disabled = false;
+                }
+            });
+        });
+    </script>
+}

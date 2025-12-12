@@ -1,0 +1,31 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+@{
+    if (User?.Identity?.IsAuthenticated ?? false)
+    {
+        <div class="has-text-centered">
+            <h1 class="title is-1">Welcome!</h1>
+            <div class="fixed-grid has-1-cols">
+                <div class="grid is-2">
+                    <div class="cell pb-2">
+                        <p>What would you like to do?</p>
+                    </div>
+                    <div class="cell">
+                        <a class="button is-primary" asp-page="/Exams/NewExam">Start New Exam</a>
+                    </div>
+                    <div class="cell">
+                        <a class="button is-primary is-outlined" asp-page="/Exams/ViewExams">View Exam History</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <a class="button" href="/api/auth/google">Log in with Google</a>
+    }
+}
