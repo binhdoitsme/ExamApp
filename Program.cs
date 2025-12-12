@@ -21,6 +21,9 @@ builder.Services.AddAuthentication(options =>
     options.LoginPath = "/Account/Login";
     options.LogoutPath = "/Account/Logout";
     options.ExpireTimeSpan = TimeSpan.FromDays(14);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.SlidingExpiration = true;
 })
 .AddGoogle(googleOptions =>
@@ -37,6 +40,7 @@ builder.Services.AddAuthentication(options =>
     // Map additional claims
     googleOptions.ClaimActions.MapJsonKey("picture", "picture");
     googleOptions.SaveTokens = true;
+    googleOptions.CorrelationCookie.SameSite = SameSiteMode.Lax;
 });
 
 // Add services
