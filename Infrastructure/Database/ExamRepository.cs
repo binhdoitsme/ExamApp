@@ -30,6 +30,7 @@ public class ExamRepository(ExamDbContext dbContext) : IExamRepository
         .AsNoTracking()
         .Include(e => e.Questions.OrderBy(q => q.Index))
         .Where(e => e.CreatedBy == userId)
+        .OrderByDescending(e => e.CreatedAt)
         .Skip(offset)
         .Take(limit)
         .ToListAsync(cancellationToken);
