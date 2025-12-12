@@ -10,7 +10,7 @@ public class ExamService(
 )
 {
     private const int TOTAL_QUESTIONS = 120;
-    private const string DEFAULT_DURATION = "10m";
+    private const string DEFAULT_DURATION = "2h";
 
     public async Task<ExamDto> CreateNewExam(UserId userId, CancellationToken cancellationToken = default)
     {
