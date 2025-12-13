@@ -18,7 +18,7 @@ public class DoExamModel(ExamService examService) : PageModel
     public TimeSpan? TimeRemaining { get; set; }
     public bool IsExpired { get; set; }
 
-    public async Task<IActionResult> OnGetAsync()
+    public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken = default)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException();
         var exam = await examService.GetExamById(new ExamId(ExamId), new UserId(userId));
@@ -42,7 +42,7 @@ public class DoExamModel(ExamService examService) : PageModel
                 // TODO: Auto submit if not already
                 if (exam.SubmittedAt == null)
                 {
-                    await examService.SubmitExam(new ExamId(exam.Id), new UserId(exam.CreatedBy));
+                    await examService.SubmitExam(new ExamId(exam.Id), new UserId(exam.CreatedBy), cancellationToken);
                     return LocalRedirect($"/Exams/Results/{exam.Id}");
                 }
             }
@@ -51,11 +51,19 @@ public class DoExamModel(ExamService examService) : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostSubmitAsync(int?[] answers)
+    public async Task<IActionResult> OnPostAsync(
+        Dictionary<int, int?> answers, CancellationToken cancellationToken = default)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException();
-        await examService.UpdateExamAnswers(new ExamId(ExamId), new UserId(userId), answers);
-        await examService.SubmitExam(new ExamId(ExamId), new UserId(userId));
+
+        // Convert sparse → dense array (120 questions)
+        var denseAnswers = new int?[120];
+        foreach (var kvp in answers)
+        {
+            denseAnswers[kvp.Key] = kvp.Value;
+        }
+
+        await examService.SubmitExamWithAnswers(new ExamId(ExamId), denseAnswers, new UserId(userId), cancellationToken);
         return RedirectToPage("/Exams/Results", new { examId = ExamId });
     }
 }

@@ -6,6 +6,8 @@ using ExamApp.DTO;
 using ExamApp.Domain;
 using System.Security.Claims;
 
+namespace ExamApp.Pages.Exams;
+
 [Authorize]
 public class ResultsModel(ExamService examService) : PageModel
 {
@@ -34,7 +36,7 @@ public class ResultsModel(ExamService examService) : PageModel
         ResultStatus = ScorePercentage >= 85 ? "PASSED" : "FAILED";
         ResultMessage = ScorePercentage >= 85
             ? $"Congratulations! You passed with {CorrectCount}/{TotalQuestions} correct ({ScorePercentage:F1}%)"
-            : $"You scored {CorrectCount}/{TotalQuestions} correct ({ScorePercentage:F1}%). Try again!";
+            : $"You scored {CorrectCount}/{TotalQuestions} correct ({ScorePercentage:F2}%). Try again!";
 
         return Page();
     }

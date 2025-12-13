@@ -5,7 +5,7 @@ public class Exam
     public ExamId Id { get; }
     public Duration Duration { get; }
     public IReadOnlyList<ExamQuestion> Questions => questions;
-    private readonly List<ExamQuestion> questions = [];
+    private List<ExamQuestion> questions = [];
     public UserId CreatedBy { get; }
     public DateTime? StartedAt { get; private set; }
     public DateTime? SubmittedAt { get; private set; }

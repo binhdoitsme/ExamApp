@@ -13,7 +13,7 @@
             <div class="notification @(Model.ResultStatus == "PASSED" ? "is-success" : "is-danger") mb-6">
                 <div class="content has-text-centered">
                     <p class="heading">@Model.CorrectCount / @Model.TotalQuestions correct</p>
-                    <p class="title is-1">@(Model.ScorePercentage)%</p>
+                    <p class="title is-1">@Model.ScorePercentage.ToString("F2")%</p>
                 </div>
                 <p class="subtitle">@Model.ResultMessage</p>
             </div>

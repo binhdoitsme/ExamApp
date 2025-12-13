@@ -124,9 +124,32 @@ public class ExamService(
         if (exam.SubmittedAt.HasValue)
             throw new InvalidOperationException("Exam already submitted");
 
-        exam.Submit();
         var correctAnswers = await questionBankRepository.GetCorrectAnswers(
             exam.Questions.Select(q => q.SourceQuestionId), cancellationToken);
+        exam.Submit();
+        exam.RevealAnswers(correctAnswers);
+        await examRepository.Save(exam, cancellationToken);
+    }
+
+    public async Task SubmitExamWithAnswers(
+        ExamId examId,
+        int?[] answers,
+        UserId userId,
+        CancellationToken cancellationToken = default)
+    {
+        var exam = await examRepository.GetById(examId, cancellationToken)
+            ?? throw new InvalidOperationException("Exam not found");
+
+        if (exam.CreatedBy != userId)
+            throw new UnauthorizedAccessException("Unauthorized");
+
+        if (exam.SubmittedAt.HasValue)
+            throw new InvalidOperationException("Exam already submitted");
+
+        var correctAnswers = await questionBankRepository.GetCorrectAnswers(
+            exam.Questions.Select(q => q.SourceQuestionId), cancellationToken);
+        exam.UpdateAnswers(answers);
+        exam.Submit();
         exam.RevealAnswers(correctAnswers);
         await examRepository.Save(exam, cancellationToken);
     }
